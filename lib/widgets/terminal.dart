@@ -70,7 +70,10 @@ class TerminalState extends State<Terminal> {
         _data.add(_TerminalData(value: "Cannot send empty command\nUse \"send [obd command]\"", type: TerminalDataType.output));
       } else if (_terminalCommandContext["connectedDevice"] != null) {
         _data.add(_TerminalData(value: "Sending ${command.substring(5)}", type: TerminalDataType.output));
-        _terminalCommandContext["connectedDevice"].sendData(command.substring(5).codeUnits);
+        // all messages to the ELM327 must be terminated with a carriage return character (hex '0D') before it will be acted upon
+        // https://www.elmelectronics.com/wp-content/uploads/2016/07/ELM327DS.pdf
+        var commandTeminator = 0x0D;
+        _terminalCommandContext["connectedDevice"].sendData(command.substring(5).codeUnits + [commandTeminator]);
       } else {
         _data.add(_TerminalData(value: "Not connected\nRun \"scan\" to connect to a device", type: TerminalDataType.output));
       }

@@ -81,7 +81,7 @@ class PresetCommandsMenu extends StatelessWidget {
               onTap: () => closeMenuAndCallback('send $c')
             ),),
           ),
-
+/*
           SizedBox(
             height: 40,
             child: ListTile(
@@ -90,6 +90,7 @@ class PresetCommandsMenu extends StatelessWidget {
               onTap: () => closeMenuAndCallback('help'),
             ),
           ),
+*/
 
         ],
       ),

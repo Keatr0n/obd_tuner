@@ -124,4 +124,11 @@ class BluetoothLEDevice implements BluetoothDevice {
     _readCharacteristic = fb.BluetoothCharacteristic.fromProto(pb.BluetoothCharacteristic(uuid: "0000FFF1-0000-1000-8000-008055F9b34fb", serviceUuid: "0000FFF0-0000-1000-8000-008055F9b34fb"));
     _writeCharacteristic = fb.BluetoothCharacteristic.fromProto(pb.BluetoothCharacteristic(uuid: "0000FFF2-0000-1000-8000-008055F9b34fb", serviceUuid: "0000FFF0-0000-1000-8000-008055F9b34fb"));
   }
+
+  @override
+  Stream<List<int>>? listenToData() {
+    if (!_isConnected) return null;
+
+    return _readCharacteristic?.value;
+  }
 }

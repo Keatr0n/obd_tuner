@@ -45,7 +45,7 @@ class BluetoothClassicDevice implements BluetoothDevice {
   Future<bool> connect() async {
     try {
       _connection = await bc.BluetoothConnection.toAddress(device.address);
-      return true;
+      return _connection?.isConnected ?? false;
     } catch (e) {
       print(e);
       return false;
@@ -74,6 +74,13 @@ class BluetoothClassicDevice implements BluetoothDevice {
   Future<void> sendData(List<int> data) async {
     if (isConnected) {
       return _connection?.output.add(Uint8List.fromList(data));
+    }
+  }
+
+  @override
+  Stream<List<int>>? listenToData() {
+    if (isConnected) {
+      return _connection?.input;
     }
   }
 }

@@ -8,8 +8,7 @@ abstract class BluetoothDevice {
   final String name;
   final String address;
 
-  bool _isConnected = false;
-  bool get isConnected => _isConnected;
+  bool get isConnected;
 
   Future<bool> connect();
 
@@ -17,4 +16,6 @@ abstract class BluetoothDevice {
 
   Future<void> sendData(List<int> data);
   Future<List<int>?> readData();
+
+  Stream<List<int>>? listenToData();
 }

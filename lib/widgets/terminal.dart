@@ -37,6 +37,163 @@ class _TerminalData {
   }
 }
 
+class _TerminalCommandHandler {
+  _TerminalCommandHandler(this.onUpdate);
+  final void Function(_TerminalData) onUpdate;
+
+  final Map<String, dynamic> _terminalCommandContext = {};
+
+  void _addInput(String input) {
+    onUpdate(_TerminalData(value: input, type: TerminalDataType.input));
+  }
+
+  void _addOutput(String input) {
+    onUpdate(_TerminalData(value: input, type: TerminalDataType.output));
+  }
+
+  void _scanLE() {
+    _addOutput("Scanning for devices...");
+    BluetoothLE().scanForDevice(_addOutput).then((devices) {
+      if (devices.isNotEmpty) {
+        _terminalCommandContext["devices"] = devices;
+
+        var i = -1;
+        _addOutput(devices.map((e) {
+          i++;
+          return "$i: ${e.address} ${e.name != "" ? "(${e.name})" : ""}\n";
+        }).reduce((value, element) => "$value$element"));
+
+        _addOutput("Type \"connect [number]\" to connect to a device");
+        _addOutput("If a device you're looking for isn't here,\ntry \"scan classic\" instead");
+      } else {
+        _addOutput("No devices found");
+      }
+    });
+  }
+
+  void _scanClassic() {
+    _addOutput("Scanning for devices...");
+    BluetoothClassic().scanForDevice(_addOutput).then((devices) {
+      if (devices.isNotEmpty) {
+        _terminalCommandContext["devices"] = devices;
+
+        var i = -1;
+        _addOutput(devices.map((e) {
+          i++;
+          return "$i: ${e.address} ${e.name != "" ? "(${e.name})" : ""}\n";
+        }).reduce((value, element) => "$value$element"));
+
+        _addOutput("Type \"connect [number]\" to connect to a device");
+        _addOutput("If a device you're looking for isn't here,\ntry pairing with it in your phones settings first");
+      } else {
+        _addOutput("No devices found");
+      }
+    });
+  }
+
+  void _connect(String args) {
+    _addOutput("Connecting to device...");
+    if (_terminalCommandContext["devices"] == null) {
+      _addOutput("First run \"scan [le||classic]\" to scan for devices");
+      return;
+    }
+
+    int? deviceId = int.tryParse(args);
+    if (deviceId == null || deviceId < 0 || deviceId >= _terminalCommandContext["devices"].length) {
+      _addOutput("Invalid device");
+      return;
+    }
+
+    (_terminalCommandContext["devices"][deviceId] as BluetoothDevice).connect().then((value) {
+      _terminalCommandContext["connectedDevice"] = _terminalCommandContext["devices"][deviceId];
+      if (!value) {
+        _addOutput("Failed to connect to $deviceId");
+        return;
+      }
+
+      _addOutput("Connected to $deviceId");
+
+      if (_terminalCommandContext["connectedDeviceStream"] != null) {
+        _terminalCommandContext["connectedDeviceStream"]?.cancel();
+      }
+
+      _terminalCommandContext["connectedDeviceStream"] = (_terminalCommandContext["devices"][deviceId] as BluetoothDevice).listenToData()?.listen((data) {
+        _addOutput("Device response ${data.toString()}\n${ascii.decode(data)}");
+      });
+    });
+  }
+
+  void _send(String args) {
+    if (args.isEmpty) {
+      _addOutput("Cannot send empty command\nUse \"send [obd command]\"");
+      return;
+    }
+
+    if (_terminalCommandContext["connectedDevice"] != null) {
+      _addOutput("Sending $args");
+      _terminalCommandContext["connectedDevice"].sendData(args);
+      return;
+    }
+
+    _addOutput("Not connected\nRun \"scan\" to connect to a device");
+  }
+
+  void _disconnect() {
+    if (_terminalCommandContext["connectedDeviceStream"] != null) {
+      _terminalCommandContext["connectedDeviceStream"]?.cancel();
+    }
+    if (_terminalCommandContext["connectedDevice"] != null) {
+      _terminalCommandContext["connectedDevice"]?.disconnect();
+    }
+    _addOutput("Disconnected from device");
+  }
+
+  void runCommand(String cmd) {
+    final String fullCommand = cmd.trim();
+    final String command = fullCommand.split(" ").first;
+    final String args = fullCommand.contains(" ") ? fullCommand.split(" ").sublist(1).join(" ").trim() : "";
+
+    if (fullCommand.isNotEmpty) _addInput(fullCommand);
+
+    switch (command) {
+      case 'help':
+        _addOutput(
+          """
+          help - show this help
+          scan [le||classic] - scan for devices
+          connect [device number] - connect to device
+          send [command] - send command to device
+          disconnect - disconnect from the device
+          """,
+        );
+        break;
+      case 'scan':
+        if (args == "le") {
+          _scanLE();
+        } else if (args == "classic") {
+          _scanClassic();
+        } else {
+          _addOutput("Type \"scan le\"for bluetooth low energy,\nor \"scan classic\" for bluetooth classic");
+        }
+
+        break;
+      case 'connect':
+        _connect(args);
+        break;
+
+      case 'send':
+        _send(args);
+        break;
+
+      case 'disconnect':
+        _disconnect();
+        break;
+      default:
+        _addOutput('Unknown command: $command');
+    }
+  }
+}
+
 class Terminal extends StatefulWidget {
   const Terminal({this.width, this.height, this.commandStream, Key? key}) : super(key: key);
 
@@ -52,120 +209,22 @@ class TerminalState extends State<Terminal> {
   final _textController = TextEditingController();
   final List<_TerminalData> _data = [];
 
-  final Map<String, dynamic> _terminalCommandContext = {};
-
   TerminalState({Key? key}) : super();
 
   StreamSubscription<String>? _commandSubscription;
 
-  void onNewCommand(String cmd) {
-    final String command = cmd.trim();
-
-    if (command.isNotEmpty) {
-      _data.add(_TerminalData(value: command, type: TerminalDataType.input));
-    }
-
-    if (command.split(" ").first == "send") {
-      if (command.length < 6) {
-        _data.add(_TerminalData(value: "Cannot send empty command\nUse \"send [obd command]\"", type: TerminalDataType.output));
-      } else if (_terminalCommandContext["connectedDevice"] != null) {
-        _data.add(_TerminalData(value: "Sending ${command.substring(5)}", type: TerminalDataType.output));
-        _terminalCommandContext["connectedDevice"].sendData(command.substring(5).codeUnits);
-      } else {
-        _data.add(_TerminalData(value: "Not connected\nRun \"scan\" to connect to a device", type: TerminalDataType.output));
-      }
-    } else if (command == "disconnect") {
-      if (_terminalCommandContext["connectedDeviceStream"] != null) {
-        _terminalCommandContext["connectedDeviceStream"]?.cancel();
-      }
-      if (_terminalCommandContext["connectedDevice"] != null) {
-        _terminalCommandContext["connectedDevice"]?.disconnect();
-      }
-      _data.add(_TerminalData(value: "Disconnected from device", type: TerminalDataType.output));
-    } else if (command == "scan classic") {
-      BluetoothClassic().scanForDevice((status) {
-        _data.add(_TerminalData(value: status, type: TerminalDataType.output));
-        if (mounted) setState(() {});
-      }).then((devices) {
-        if (devices.isNotEmpty) {
-          _terminalCommandContext["devices"] = devices;
-          var i = -1;
-          _data.add(_TerminalData(
-            value: devices.map((e) {
-              i++;
-              return "$i: ${e.address} ${e.name != "" ? "(${e.name})" : ""}\n";
-            }).reduce((value, element) => "$value$element"),
-            type: TerminalDataType.output,
-          ));
-          _data.add(_TerminalData(value: "Type \"connect [number]\" to connect to a device", type: TerminalDataType.output));
-        } else {
-          _data.add(_TerminalData(value: "No devices found!", type: TerminalDataType.output));
-        }
-        if (mounted) setState(() {});
-      });
-    } else if (command == "scan le") {
-      BluetoothLE().scanForDevice((status) {
-        _data.add(_TerminalData(value: status, type: TerminalDataType.output));
-        if (mounted) setState(() {});
-      }).then((devices) {
-        if (devices.isNotEmpty) {
-          _terminalCommandContext["devices"] = devices;
-          var i = -1;
-          _data.add(_TerminalData(
-            value: devices.map((e) {
-              i++;
-              return "$i: ${e.address} ${e.name != "" ? "(${e.name})" : ""}\n";
-            }).reduce((value, element) => "$value$element"),
-            type: TerminalDataType.output,
-          ));
-          _data.add(_TerminalData(value: "Type \"connect [number]\" to connect to a device", type: TerminalDataType.output));
-          _data.add(_TerminalData(value: "If a device you're looking for isn't here,\ntry pairing with it in your phones settings first", type: TerminalDataType.output));
-        } else {
-          _data.add(_TerminalData(value: "No devices found!", type: TerminalDataType.output));
-        }
-        if (mounted) setState(() {});
-      });
-    } else if (command.startsWith("scan")) {
-      _data.add(_TerminalData(value: "Type \"scan le\"for bluetooth low energy,\nor \"scan classic\" for bluetooth classic", type: TerminalDataType.output));
-    } else if (command.split(" ").first == "connect") {
-      if (_terminalCommandContext["devices"] != null) {
-        if (int.parse(command.split(" ").last) < _terminalCommandContext["devices"].length) {
-          (_terminalCommandContext["devices"][int.parse(command.split(" ").last)] as BluetoothDevice).connect().then((value) {
-            _terminalCommandContext["connectedDevice"] = _terminalCommandContext["devices"][int.parse(command.split(" ").last)];
-            if (value) {
-              _data.add(_TerminalData(value: "Connected to ${command.split(" ").last}", type: TerminalDataType.output));
-
-              if (_terminalCommandContext["connectedDeviceStream"] != null) {
-                _terminalCommandContext["connectedDeviceStream"]?.cancel();
-              }
-
-              _terminalCommandContext["connectedDeviceStream"] = (_terminalCommandContext["devices"][int.parse(command.split(" ").last)] as BluetoothDevice).listenToData()?.listen((data) {
-                _data.add(_TerminalData(value: "Device response ${data.toString()}\n${ascii.decode(data)}", type: TerminalDataType.output));
-                if (mounted) setState(() {});
-              });
-            } else {
-              _data.add(_TerminalData(value: "Failed to connect to ${command.split(" ").last}", type: TerminalDataType.output));
-            }
-            if (mounted) setState(() {});
-          });
-        } else {
-          _data.add(_TerminalData(value: "Invalid device number", type: TerminalDataType.output));
-        }
-      } else {
-        _data.add(_TerminalData(value: "No devices found!\nType \"scan\" to search for devices", type: TerminalDataType.output));
-      }
-    } else {
-      //_data.add(_TerminalData(value: "Sent $command", type: TerminalDataType.output));
-    }
-    setState(() {});
-  }
+  late _TerminalCommandHandler _commandHandler;
 
   @override
   void initState() {
     super.initState();
     // this ensures everything else has been loaded first
     Future.microtask(() {
-      _commandSubscription = widget.commandStream?.listen(onNewCommand);
+      _commandHandler = _TerminalCommandHandler((commandData) {
+        if (mounted) setState(() => _data.add(commandData));
+      });
+
+      _commandSubscription = widget.commandStream?.listen(_commandHandler.runCommand);
     });
   }
 
@@ -210,12 +269,12 @@ class TerminalState extends State<Terminal> {
                   controller: _textController,
                   onChanged: (text) {
                     if (text.endsWith("\n")) {
-                      onNewCommand(text.trim());
+                      _commandHandler.runCommand(text.trim());
                       _textController.clear();
                     }
                   },
                   onSubmitted: (value) {
-                    onNewCommand(value);
+                    _commandHandler.runCommand(value);
                     _textController.clear();
                   },
                 ),

@@ -47,13 +47,14 @@ class BluetoothLEDevice implements BluetoothDevice {
   @override
   bool get isConnected => _isConnected;
 
-  fb.BluetoothCharacteristic? _readCharacteristic = fb.BluetoothCharacteristic.fromProto(pb.BluetoothCharacteristic(uuid: "0000FFF1-0000-1000-8000-008055F9b34fb", serviceUuid: "0000FFF0-0000-1000-8000-008055F9b34fb"));
-  fb.BluetoothCharacteristic? _writeCharacteristic = fb.BluetoothCharacteristic.fromProto(pb.BluetoothCharacteristic(uuid: "0000FFF2-0000-1000-8000-008055F9b34fb", serviceUuid: "0000FFF0-0000-1000-8000-008055F9b34fb"));
+  fb.BluetoothCharacteristic? _readCharacteristic;
+  fb.BluetoothCharacteristic? _writeCharacteristic;
 
   @override
   Future<bool> connect() async {
     return device.connect().then((_) {
       _isConnected = true;
+      readData();
       return true;
     }, onError: (e) {
       print(e);
@@ -118,11 +119,6 @@ class BluetoothLEDevice implements BluetoothDevice {
     if (_readCharacteristic == null) return [];
 
     return _readCharacteristic?.read();
-  }
-
-  void setToHardCodedDefault() {
-    _readCharacteristic = fb.BluetoothCharacteristic.fromProto(pb.BluetoothCharacteristic(uuid: "0000FFF1-0000-1000-8000-008055F9b34fb", serviceUuid: "0000FFF0-0000-1000-8000-008055F9b34fb"));
-    _writeCharacteristic = fb.BluetoothCharacteristic.fromProto(pb.BluetoothCharacteristic(uuid: "0000FFF2-0000-1000-8000-008055F9b34fb", serviceUuid: "0000FFF0-0000-1000-8000-008055F9b34fb"));
   }
 
   @override

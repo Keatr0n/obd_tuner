@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:obd_tuner/widgets/preset_commands_menu.dart';
 import 'package:obd_tuner/widgets/terminal.dart';
@@ -29,32 +31,38 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-  GlobalKey<TerminalState> termKey = GlobalKey<TerminalState>();
+  StreamController<String> commandStreamController = StreamController<String>();
   late Terminal term;
 
   _HomePageState() {
     term = Terminal(
-      key: termKey,
+      commandStream: commandStreamController.stream,
       height: 200, // MediaQuery.of(context).size.width * 0.8,
       width: 300, // MediaQuery.of(context).size.width - 50,
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  void dispose() {
+    commandStreamController.close();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      drawer: PresetCommandsMenu( (command) => termKey.currentState!.onNewCommand(command) ),
-      appBar: AppBar( title: const Text('CoCreations OBDII Terminal') ),
+      drawer: PresetCommandsMenu((command) => commandStreamController.add(command)),
+      appBar: AppBar(title: const Text('CoCreations OBDII Terminal')),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [ 
-            const SizedBox(height: 40,),
-            term, 
-            const Spacer() 
+          children: [
+            const SizedBox(
+              height: 40,
+            ),
+            term,
+            const Spacer()
           ],
         ),
       ),

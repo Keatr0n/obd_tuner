@@ -2,7 +2,9 @@
 
 This is a quick and dirty implementation of a bluetooth obd2 reader / tuner.
 
-I don't actually have a device to test this on, so I'm just kinda hoping I get this right on the first try.
+Video demo: https://photos.app.goo.gl/vx4BpjTq6GaqwW466 
+
+APK for download: https://drive.google.com/file/d/12mbbD84NFPLMG2s3jbdI1yLpc7GtyfCz/view?usp=sharing
 
 ### to run
 Run

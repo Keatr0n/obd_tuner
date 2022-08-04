@@ -24,9 +24,6 @@ class PresetCommandsMenu extends StatelessWidget {
   'AT SH 7E0',
   '02 10 02',
   '-',
-  '-',
-  'AT RV',
-  '-',
   ];
 
   PresetCommandsMenu(
@@ -58,6 +55,7 @@ class PresetCommandsMenu extends StatelessWidget {
                       ),
                     ),
           ),
+
           SizedBox(
             height: 40,
             child: ListTile(
@@ -83,6 +81,16 @@ class PresetCommandsMenu extends StatelessWidget {
               onTap: () => closeMenuAndCallback('send $c')
             ),),
           ),
+/*
+          SizedBox(
+            height: 40,
+            child: ListTile(
+              leading: const Icon(Icons.help),
+              title: const Text('Terminal Help'),
+              onTap: () => closeMenuAndCallback('help'),
+            ),
+          ),
+*/
 
         ],
       ),

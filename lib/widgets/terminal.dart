@@ -143,7 +143,7 @@ class TerminalState extends State<Terminal> {
               }
 
               _terminalCommandContext["connectedDeviceStream"] = (_terminalCommandContext["devices"][int.parse(command.split(" ").last)] as BluetoothDevice).listenToData()?.listen((data) {
-                _data.add(_TerminalData(value: '${data.toString()} ${ascii.decode(data)}', type: TerminalDataType.output));
+                _data.add(_TerminalData(value: "Device response ${data.toString()}\n${ascii.decode(data)}", type: TerminalDataType.output));
                 if (mounted) setState(() {});
               });
             } else {

@@ -44,10 +44,10 @@ class Terminal extends StatefulWidget {
   final Stream<String>? commandStream;
 
   @override
-  State<Terminal> createState() => _TerminalState();
+  State<Terminal> createState() => TerminalState();
 }
 
-class _TerminalState extends State<Terminal> {
+class TerminalState extends State<Terminal> {
   final _textController = TextEditingController();
   final List<_TerminalData> _data = [];
 

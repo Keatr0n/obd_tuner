@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:obd_tuner/widgets/preset_commands_menu.dart';
 import 'package:obd_tuner/widgets/terminal.dart';
 
 void main() {
@@ -30,17 +31,26 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
+
+    GlobalKey<TerminalState> termKey = GlobalKey<TerminalState>();
+
+    Terminal term = Terminal(
+      key: termKey,
+      height: MediaQuery.of(context).size.width * 0.8,
+      width: MediaQuery.of(context).size.width - 50,
+    );
+
+
+
     return Scaffold(
+      drawer: PresetCommandsMenu( (command) => termKey.currentState!.onNewCommand(command) ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // add some sort of bluetooth setup here with a status indicator
-            Terminal(
-              height: MediaQuery.of(context).size.width * 0.8,
-              width: MediaQuery.of(context).size.width - 50,
-            ),
+            term,
             // put a list of preset commands here
           ],
         ),

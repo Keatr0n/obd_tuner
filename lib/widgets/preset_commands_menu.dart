@@ -16,6 +16,17 @@ class PresetCommandsMenu extends StatelessWidget {
   'AT CEA',
   'AT SH 721',
   '02 27 01',
+  '-',
+  '-',
+  'AT SH 720',
+  '02 A0 27',
+  '-',
+  'AT SH 7E0',
+  '02 10 02',
+  '-',
+  '-',
+  'AT RV',
+  '-',
   ];
 
   PresetCommandsMenu(
@@ -47,24 +58,32 @@ class PresetCommandsMenu extends StatelessWidget {
                       ),
                     ),
           ),
-          ListTile(
-            leading: const Icon(Icons.bluetooth_searching),
-            title: const Text('Scan'),
-            onTap: () => closeMenuAndCallback('scan'),
+          SizedBox(
+            height: 40,
+            child: ListTile(
+              leading: const Icon(Icons.bluetooth_searching),
+              title: const Text('Scan'),
+              onTap: () => closeMenuAndCallback('scan classic'),
+            ),
           ),
-          ListTile(
-            leading: const Icon(Icons.bluetooth_drive),
-            title: const Text('Connect 0\n(if device 0 is OBDII)'),
-            onTap: () => closeMenuAndCallback('connect 0'),
+          SizedBox(
+            height: 40,
+            child: ListTile(
+              leading: const Icon(Icons.bluetooth_drive),
+              title: const Text('Connect 0\n(if device 0 is OBDII)'),
+              onTap: () => closeMenuAndCallback('connect 0'),
+            ),
           ),
 
           ...commandsList.map((c) => 
-            ListTile(
+            (c=='-') ? const SizedBox(height: 20) :
+            SizedBox(height:30, child: ListTile(
+              leading: const Icon(Icons.arrow_forward_ios),
               title: Text(c),
-              onTap: () => closeMenuAndCallback(c)
-            ),
+              onTap: () => closeMenuAndCallback('send $c')
+            ),),
           ),
-          
+
         ],
       ),
     );

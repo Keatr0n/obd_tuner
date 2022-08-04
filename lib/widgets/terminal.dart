@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:obd_tuner/utils/bluetooth.dart';
@@ -52,6 +53,8 @@ class TerminalState extends State<Terminal> {
   final List<_TerminalData> _data = [];
 
   final Map<String, dynamic> _terminalCommandContext = {};
+
+  TerminalState({Key? key}) : super();
 
   StreamSubscription<String>? _commandSubscription;
 
@@ -137,7 +140,7 @@ class TerminalState extends State<Terminal> {
               }
 
               _terminalCommandContext["connectedDeviceStream"] = (_terminalCommandContext["devices"][int.parse(command.split(" ").last)] as BluetoothDevice).listenToData()?.listen((data) {
-                _data.add(_TerminalData(value: data.toString(), type: TerminalDataType.output));
+                _data.add(_TerminalData(value: '${data.toString()} ${ascii.decode(data)}', type: TerminalDataType.output));
                 if (mounted) setState(() {});
               });
             } else {
@@ -152,7 +155,7 @@ class TerminalState extends State<Terminal> {
         _data.add(_TerminalData(value: "No devices found!\nType \"scan\" to search for devices", type: TerminalDataType.output));
       }
     } else {
-      _data.add(_TerminalData(value: "Received $command", type: TerminalDataType.output));
+      //_data.add(_TerminalData(value: "Sent $command", type: TerminalDataType.output));
     }
     setState(() {});
   }

@@ -29,29 +29,32 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+
+  GlobalKey<TerminalState> termKey = GlobalKey<TerminalState>();
+  late Terminal term;
+
+  _HomePageState() {
+    term = Terminal(
+      key: termKey,
+      height: 200, // MediaQuery.of(context).size.width * 0.8,
+      width: 300, // MediaQuery.of(context).size.width - 50,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
 
-    GlobalKey<TerminalState> termKey = GlobalKey<TerminalState>();
-
-    Terminal term = Terminal(
-      key: termKey,
-      height: MediaQuery.of(context).size.width * 0.8,
-      width: MediaQuery.of(context).size.width - 50,
-    );
-
-
-
     return Scaffold(
       drawer: PresetCommandsMenu( (command) => termKey.currentState!.onNewCommand(command) ),
+      appBar: AppBar( title: const Text('CoCreations OBDII Terminal') ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // add some sort of bluetooth setup here with a status indicator
-            term,
-            // put a list of preset commands here
+          children: [ 
+            const SizedBox(height: 40,),
+            term, 
+            const Spacer() 
           ],
         ),
       ),

@@ -150,7 +150,7 @@ class _TerminalCommandHandler {
 
   void runCommand(String cmd) {
     final String fullCommand = cmd.trim();
-    final String command = fullCommand.split(" ").first;
+    final String command = fullCommand.split(" ").first.toLowerCase();
     final String args = fullCommand.contains(" ") ? fullCommand.split(" ").sublist(1).join(" ").trim() : "";
 
     if (fullCommand.isNotEmpty) _addInput(fullCommand);

@@ -75,7 +75,7 @@ class _TerminalState extends State<Terminal> {
             }).reduce((value, element) => "$value$element"),
             type: TerminalDataType.output,
           ));
-          _data.add(_TerminalData(value: "type \"connect [number]\" to connect to a device", type: TerminalDataType.output));
+          _data.add(_TerminalData(value: "Type \"connect [number]\" to connect to a device", type: TerminalDataType.output));
         } else {
           _data.add(_TerminalData(value: "No devices found!", type: TerminalDataType.output));
         }
@@ -96,7 +96,8 @@ class _TerminalState extends State<Terminal> {
             }).reduce((value, element) => "$value$element"),
             type: TerminalDataType.output,
           ));
-          _data.add(_TerminalData(value: "type \"connect [number]\" to connect to a device", type: TerminalDataType.output));
+          _data.add(_TerminalData(value: "Type \"connect [number]\" to connect to a device", type: TerminalDataType.output));
+          _data.add(_TerminalData(value: "If a device you're looking for isn't here,\ntry pairing with it in your phones settings first", type: TerminalDataType.output));
         } else {
           _data.add(_TerminalData(value: "No devices found!", type: TerminalDataType.output));
         }

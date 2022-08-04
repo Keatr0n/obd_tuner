@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:obd_tuner/utils/bluetooth.dart';
 
 enum TerminalDataType {
   input,
@@ -47,11 +48,55 @@ class Terminal extends StatefulWidget {
 class _TerminalState extends State<Terminal> {
   final _textController = TextEditingController();
   final List<_TerminalData> _data = [];
+
+  final Map<String, dynamic> _terminalCommandContext = {};
+
   StreamSubscription<String>? _commandSubscription;
 
   void onNewCommand(String command) {
     if (command.isNotEmpty) {
       _data.add(_TerminalData(value: command, type: TerminalDataType.input));
+    }
+
+    if (command == "scan") {
+      Bluetooth().searchForDevices((status) {
+        _data.add(_TerminalData(value: status, type: TerminalDataType.output));
+        if (mounted) setState(() {});
+      }).then((devices) {
+        if (devices.isNotEmpty) {
+          _terminalCommandContext["devices"] = devices;
+          var i = -1;
+          _data.add(_TerminalData(
+            value: devices.map((e) {
+              i++;
+              return "$i: ${e.id.id} ${e.name != "" ? "(${e.name})" : ""}\n";
+            }).reduce((value, element) => "$value$element"),
+            type: TerminalDataType.output,
+          ));
+          _data.add(_TerminalData(value: "type \"connect [number]\" to connect to a device", type: TerminalDataType.output));
+        } else {
+          _data.add(_TerminalData(value: "No devices found!", type: TerminalDataType.output));
+        }
+        if (mounted) setState(() {});
+      });
+    } else if (command.split(" ").first == "connect") {
+      if (_terminalCommandContext["devices"] != null) {
+        if (int.parse(command.split(" ").last) < _terminalCommandContext["devices"].length) {
+          Bluetooth().connectToDevice(_terminalCommandContext["devices"][int.parse(command.split(" ").last)]).then((value) {
+            if (value) {
+              _data.add(_TerminalData(value: "Connected to ${command.split(" ").last}", type: TerminalDataType.output));
+            } else {
+              _data.add(_TerminalData(value: "Failed to connect to ${command.split(" ").last}", type: TerminalDataType.output));
+            }
+            if (mounted) setState(() {});
+          });
+        } else {
+          _data.add(_TerminalData(value: "Invalid device number", type: TerminalDataType.output));
+        }
+      } else {
+        _data.add(_TerminalData(value: "No devices found!\nType \"scan\" to search for devices", type: TerminalDataType.output));
+      }
+    } else {
       _data.add(_TerminalData(value: "Received $command", type: TerminalDataType.output));
     }
     setState(() {});
@@ -82,12 +127,14 @@ class _TerminalState extends State<Terminal> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          ListView(
-            shrinkWrap: true,
-            reverse: true,
-            children: [
-              for (var i = _data.length - 1; i >= 0; i--) _data[i].buildText(),
-            ],
+          SizedBox(
+            height: widget.height != null ? widget.height! * 0.9 : null,
+            child: ListView(
+              reverse: true,
+              children: [
+                for (var i = _data.length - 1; i >= 0; i--) _data[i].buildText(),
+              ],
+            ),
           ),
           Row(
             mainAxisSize: MainAxisSize.min,

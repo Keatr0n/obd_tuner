@@ -76,4 +76,11 @@ class BluetoothClassicDevice implements BluetoothDevice {
       return _connection?.output.add(Uint8List.fromList(data));
     }
   }
+
+  @override
+  Stream<List<int>>? listenToData() {
+    if (isConnected) {
+      return _connection?.input;
+    }
+  }
 }

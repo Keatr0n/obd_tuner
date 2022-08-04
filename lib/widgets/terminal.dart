@@ -55,12 +55,31 @@ class _TerminalState extends State<Terminal> {
 
   StreamSubscription<String>? _commandSubscription;
 
-  void onNewCommand(String command) {
+  void onNewCommand(String cmd) {
+    final String command = cmd.trim();
+
     if (command.isNotEmpty) {
       _data.add(_TerminalData(value: command, type: TerminalDataType.input));
     }
 
-    if (command == "scan classic") {
+    if (command.split(" ").first == "send") {
+      if (command.length < 6) {
+        _data.add(_TerminalData(value: "Cannot send empty command\nUse \"send [obd command]\"", type: TerminalDataType.output));
+      } else if (_terminalCommandContext["connectedDevice"] != null) {
+        _data.add(_TerminalData(value: "Sending ${command.substring(5)}", type: TerminalDataType.output));
+        _terminalCommandContext["connectedDevice"].sendData(command.substring(5).codeUnits);
+      } else {
+        _data.add(_TerminalData(value: "Not connected\nRun \"scan\" to connect to a device", type: TerminalDataType.output));
+      }
+    } else if (command == "disconnect") {
+      if (_terminalCommandContext["connectedDeviceStream"] != null) {
+        _terminalCommandContext["connectedDeviceStream"]?.cancel();
+      }
+      if (_terminalCommandContext["connectedDevice"] != null) {
+        _terminalCommandContext["connectedDevice"]?.disconnect();
+      }
+      _data.add(_TerminalData(value: "Disconnected from device", type: TerminalDataType.output));
+    } else if (command == "scan classic") {
       BluetoothClassic().scanForDevice((status) {
         _data.add(_TerminalData(value: status, type: TerminalDataType.output));
         if (mounted) setState(() {});
@@ -109,8 +128,18 @@ class _TerminalState extends State<Terminal> {
       if (_terminalCommandContext["devices"] != null) {
         if (int.parse(command.split(" ").last) < _terminalCommandContext["devices"].length) {
           (_terminalCommandContext["devices"][int.parse(command.split(" ").last)] as BluetoothDevice).connect().then((value) {
+            _terminalCommandContext["connectedDevice"] = _terminalCommandContext["devices"][int.parse(command.split(" ").last)];
             if (value) {
               _data.add(_TerminalData(value: "Connected to ${command.split(" ").last}", type: TerminalDataType.output));
+
+              if (_terminalCommandContext["connectedDeviceStream"] != null) {
+                _terminalCommandContext["connectedDeviceStream"]?.cancel();
+              }
+
+              _terminalCommandContext["connectedDeviceStream"] = (_terminalCommandContext["devices"][int.parse(command.split(" ").last)] as BluetoothDevice).listenToData()?.listen((data) {
+                _data.add(_TerminalData(value: data.toString(), type: TerminalDataType.output));
+                if (mounted) setState(() {});
+              });
             } else {
               _data.add(_TerminalData(value: "Failed to connect to ${command.split(" ").last}", type: TerminalDataType.output));
             }

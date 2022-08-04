@@ -16,4 +16,6 @@ abstract class BluetoothDevice {
 
   Future<void> sendData(List<int> data);
   Future<List<int>?> readData();
+
+  Stream<List<int>>? listenToData();
 }

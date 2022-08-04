@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:obd_tuner/utils/bluetooth.dart';
+import 'package:obd_tuner/utils/bluetooth_classic.dart';
+import 'package:obd_tuner/utils/bluetooth_le.dart';
 
 enum TerminalDataType {
   input,
@@ -58,8 +60,8 @@ class _TerminalState extends State<Terminal> {
       _data.add(_TerminalData(value: command, type: TerminalDataType.input));
     }
 
-    if (command == "scan") {
-      Bluetooth().searchForDevices((status) {
+    if (command == "scan classic") {
+      BluetoothClassic().scanForDevice((status) {
         _data.add(_TerminalData(value: status, type: TerminalDataType.output));
         if (mounted) setState(() {});
       }).then((devices) {
@@ -69,7 +71,7 @@ class _TerminalState extends State<Terminal> {
           _data.add(_TerminalData(
             value: devices.map((e) {
               i++;
-              return "$i: ${e.id.id} ${e.name != "" ? "(${e.name})" : ""}\n";
+              return "$i: ${e.address} ${e.name != "" ? "(${e.name})" : ""}\n";
             }).reduce((value, element) => "$value$element"),
             type: TerminalDataType.output,
           ));
@@ -79,10 +81,33 @@ class _TerminalState extends State<Terminal> {
         }
         if (mounted) setState(() {});
       });
+    } else if (command == "scan le") {
+      BluetoothLE().scanForDevice((status) {
+        _data.add(_TerminalData(value: status, type: TerminalDataType.output));
+        if (mounted) setState(() {});
+      }).then((devices) {
+        if (devices.isNotEmpty) {
+          _terminalCommandContext["devices"] = devices;
+          var i = -1;
+          _data.add(_TerminalData(
+            value: devices.map((e) {
+              i++;
+              return "$i: ${e.address} ${e.name != "" ? "(${e.name})" : ""}\n";
+            }).reduce((value, element) => "$value$element"),
+            type: TerminalDataType.output,
+          ));
+          _data.add(_TerminalData(value: "type \"connect [number]\" to connect to a device", type: TerminalDataType.output));
+        } else {
+          _data.add(_TerminalData(value: "No devices found!", type: TerminalDataType.output));
+        }
+        if (mounted) setState(() {});
+      });
+    } else if (command.startsWith("scan")) {
+      _data.add(_TerminalData(value: "Type \"scan le\"for bluetooth low energy,\nor \"scan classic\" for bluetooth classic", type: TerminalDataType.output));
     } else if (command.split(" ").first == "connect") {
       if (_terminalCommandContext["devices"] != null) {
         if (int.parse(command.split(" ").last) < _terminalCommandContext["devices"].length) {
-          Bluetooth().connectToDevice(_terminalCommandContext["devices"][int.parse(command.split(" ").last)]).then((value) {
+          (_terminalCommandContext["devices"][int.parse(command.split(" ").last)] as BluetoothDevice).connect().then((value) {
             if (value) {
               _data.add(_TerminalData(value: "Connected to ${command.split(" ").last}", type: TerminalDataType.output));
             } else {
@@ -128,7 +153,7 @@ class _TerminalState extends State<Terminal> {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           SizedBox(
-            height: widget.height != null ? widget.height! * 0.9 : null,
+            height: widget.height != null ? widget.height! - 50 : null,
             child: ListView(
               reverse: true,
               children: [

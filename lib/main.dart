@@ -38,7 +38,7 @@ class _HomePageState extends State<HomePage> {
           children: [
             // add some sort of bluetooth setup here with a status indicator
             Terminal(
-              height: 500,
+              height: MediaQuery.of(context).size.width * 0.8,
               width: MediaQuery.of(context).size.width - 50,
             ),
             // put a list of preset commands here

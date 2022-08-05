@@ -2,7 +2,7 @@
 
 This is a quick and dirty implementation of a bluetooth obd2 reader / tuner.
 
-<video controls>
+<video  width="320" height="240"  controls>
   <source src="https://photos.app.goo.gl/vx4BpjTq6GaqwW466 " type="video/mp4">
 </video>
 

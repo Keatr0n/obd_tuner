@@ -41,10 +41,13 @@ class BluetoothClassicDevice implements BluetoothDevice {
 
   bc.BluetoothConnection? _connection;
 
+  Stream<List<int>>? _stream;
+
   @override
   Future<bool> connect() async {
     try {
       _connection = await bc.BluetoothConnection.toAddress(device.address);
+      _stream = _connection?.input?.asBroadcastStream();
       return _connection?.isConnected ?? false;
     } catch (e) {
       print(e);
@@ -78,9 +81,5 @@ class BluetoothClassicDevice implements BluetoothDevice {
   }
 
   @override
-  Stream<List<int>>? listenToData() {
-    if (isConnected) {
-      return _connection?.input;
-    }
-  }
+  Stream<List<int>>? listenToData() => _stream;
 }

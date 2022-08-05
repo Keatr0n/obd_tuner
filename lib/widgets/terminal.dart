@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:obd_tuner/utils/bluetooth.dart';
 import 'package:obd_tuner/utils/bluetooth_classic.dart';
 import 'package:obd_tuner/utils/bluetooth_le.dart';
+import 'package:obd_tuner/utils/obd_commands.dart';
 
 enum TerminalDataType {
   input,
@@ -131,7 +132,8 @@ class _TerminalCommandHandler {
 
     if (_terminalCommandContext["connectedDevice"] != null) {
       _addOutput("Sending $args");
-      _terminalCommandContext["connectedDevice"].sendData(args);
+
+      (_terminalCommandContext["connectedDevice"] as BluetoothDevice).sendData(args.codeUnits + [ObdCommands.commandTerminator]);
       return;
     }
 

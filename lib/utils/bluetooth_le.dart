@@ -47,6 +47,8 @@ class BluetoothLEDevice implements BluetoothDevice {
   @override
   bool get isConnected => _isConnected;
 
+  Stream<List<int>>? _stream;
+
   fb.BluetoothCharacteristic? _readCharacteristic;
   fb.BluetoothCharacteristic? _writeCharacteristic;
 
@@ -118,13 +120,11 @@ class BluetoothLEDevice implements BluetoothDevice {
 
     if (_readCharacteristic == null) return [];
 
+    _stream = _readCharacteristic?.value.asBroadcastStream();
+
     return _readCharacteristic?.read();
   }
 
   @override
-  Stream<List<int>>? listenToData() {
-    if (!_isConnected) return null;
-
-    return _readCharacteristic?.value;
-  }
+  Stream<List<int>>? listenToData() => _stream;
 }

@@ -52,6 +52,42 @@ class _TerminalCommandHandler {
     onUpdate(_TerminalData(value: input, type: TerminalDataType.output));
   }
 
+  void _testCommand() {
+    ObdCommands(_terminalCommandContext["connectedDevice"]).runTestCommand(_addOutput);
+  }
+
+  void _advancedCommand(String arg) async {
+    if (_terminalCommandContext["connectedDevice"] == null) {
+      _addOutput("No device connected");
+      _addOutput("Run 'scan classic' or 'scan le' to connect to a device");
+      return;
+    }
+
+    switch (arg) {
+      case "setup device":
+        _addOutput("Setting up device...");
+        var res = await ObdCommands(_terminalCommandContext["connectedDevice"]).setupDevice();
+        if (res) {
+          _addOutput("Device setup complete");
+        } else {
+          _addOutput("Device setup failed");
+        }
+        break;
+      case "begin commands":
+        _addOutput("Beginning commands...");
+        var res = await ObdCommands(_terminalCommandContext["connectedDevice"]).runBeginCommands();
+        if (res) {
+          _addOutput("Ran commands successfully");
+        } else {
+          _addOutput("Failed to run commands");
+        }
+        break;
+      default:
+        _addOutput("Unknown command: $arg");
+        _addOutput("known options are 'setup device' and 'begin commands'");
+    }
+  }
+
   void _scanLE() {
     _addOutput("Scanning for devices...");
     BluetoothLE().scanForDevice(_addOutput).then((devices) {
@@ -165,6 +201,7 @@ class _TerminalCommandHandler {
           scan [le||classic] - scan for devices
           connect [device number] - connect to device
           send [command] - send command to device
+          advanced [command] - run advanced command
           disconnect - disconnect from the device
           """,
         );
@@ -183,8 +220,16 @@ class _TerminalCommandHandler {
         _connect(args);
         break;
 
+      case 'test':
+        _testCommand();
+        break;
+
       case 'send':
         _send(args);
+        break;
+
+      case 'advanced':
+        _advancedCommand(args);
         break;
 
       case 'disconnect':

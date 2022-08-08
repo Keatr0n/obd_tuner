@@ -65,6 +65,22 @@ class PresetCommandsMenu extends StatelessWidget {
               onTap: () => closeMenuAndCallback('connect 0'),
             ),
           ),
+          SizedBox(
+            height: 40,
+            child: ListTile(
+              leading: const Icon(Icons.security_update_good),
+              title: const Text('Setup device'),
+              onTap: () => closeMenuAndCallback('advanced setup device'),
+            ),
+          ),
+          SizedBox(
+            height: 40,
+            child: ListTile(
+              leading: const Icon(Icons.security_update_good),
+              title: const Text('Run commands'),
+              onTap: () => closeMenuAndCallback('advanced begin commands'),
+            ),
+          ),
           ...commandsList.map(
             (c) => (c == '-')
                 ? const SizedBox(height: 20)

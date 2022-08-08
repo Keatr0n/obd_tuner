@@ -47,7 +47,7 @@ class BluetoothClassicDevice implements BluetoothDevice {
   Future<bool> connect() async {
     try {
       _connection = await bc.BluetoothConnection.toAddress(device.address);
-      _stream = _connection?.input?.asBroadcastStream();
+      _stream = _connection?.input?.asBroadcastStream().map((event) => event.toList());
       return _connection?.isConnected ?? false;
     } catch (e) {
       print(e);

@@ -37,7 +37,7 @@ class ObdCommands {
     }
 
     if (!ignorePromptCharacter) {
-      await _awaitData(">", false);
+      await _awaitData(">");
       return;
     }
 
@@ -66,12 +66,12 @@ class ObdCommands {
       // onEvent?.call(ascii.decode(data));
     });
     try {
-      await _send("AT Z", delay: const Duration(milliseconds: 500), ignorePromptCharacter: true);
+      await _send("AT Z");
       await _send("AT SP6");
       await _send("AT CAF0");
       await _send("AT CEA");
-    } catch (e) {
-      onEvent?.call("Error: $e");
+    } catch (e, s) {
+      onEvent?.call("Error: $e\n$s");
       await sub?.cancel();
       return false;
     }

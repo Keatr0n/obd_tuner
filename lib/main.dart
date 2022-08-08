@@ -32,15 +32,6 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   StreamController<String> commandStreamController = StreamController<String>();
-  late Terminal term;
-
-  _HomePageState() {
-    term = Terminal(
-      commandStream: commandStreamController.stream,
-      height: MediaQuery.of(context).size.width * 0.6,
-      width: 300, // MediaQuery.of(context).size.width - 50,
-    );
-  }
 
   @override
   void dispose() {
@@ -61,7 +52,11 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(
               height: 40,
             ),
-            term,
+            Terminal(
+              commandStream: commandStreamController.stream,
+              height: MediaQuery.of(context).size.width * 0.7,
+              width: 300, // MediaQuery.of(context).size.width - 50,
+            ),
             const Spacer()
           ],
         ),

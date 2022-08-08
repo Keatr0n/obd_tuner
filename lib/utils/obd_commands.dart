@@ -101,7 +101,13 @@ class ObdCommands {
       return false;
     }
 
-    await _send(authData.join(" "), expectedResponse: "02 67 02");
+    String authComplete = authData.join(" ");
+
+    if (!RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
+      onEvent?.call("Error: Auth data did not match expected format\n$authComplete");
+    }
+
+    await _send(authComplete, expectedResponse: "02 67 02");
 
     await _send("AT SH 7E0");
 
@@ -119,7 +125,13 @@ class ObdCommands {
       return false;
     }
 
-    await _send(authData.join(" "));
+    authComplete = authData.join(" ");
+
+    if (!RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
+      onEvent?.call("Error: Auth data did not match expected format\n$authComplete");
+    }
+
+    await _send(authComplete);
 
     await _send("AT R0");
     await _send("AT SH 720", ignorePromptCharacter: true);
@@ -135,19 +147,13 @@ class ObdCommands {
     await _send("02 10 02", expectedResponse: "01 50");
 
     await _send("AT R0");
-    await _send("AT SH 0001", ignorePromptCharacter: true);
+    await _send("AT SH 001", ignorePromptCharacter: true);
     await _send("01", ignorePromptCharacter: true);
     await _send("01", ignorePromptCharacter: true);
     await _send("06 20 07 01 00 02", ignorePromptCharacter: true);
     await _send("02 07", ignorePromptCharacter: true);
     await _send("AT R1");
     await _send("04 64 0A A5 51", expectedResponse: "01 3C");
-
-    // I think this is the reply we need, not sure though
-    // await _listenFor(device, "729 8");
-
-    // and so on.
-    // hopefully this illustrates how this is to write.
 
     return true;
   }

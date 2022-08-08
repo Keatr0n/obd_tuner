@@ -66,7 +66,7 @@ class _TerminalCommandHandler {
     switch (arg) {
       case "setup device":
         _addOutput("Setting up device...");
-        var res = await ObdCommands(_terminalCommandContext["connectedDevice"]).setupDevice();
+        var res = await ObdCommands(_terminalCommandContext["connectedDevice"]).setupDevice(_addOutput);
         if (res) {
           _addOutput("Device setup complete");
         } else {
@@ -75,7 +75,7 @@ class _TerminalCommandHandler {
         break;
       case "begin commands":
         _addOutput("Beginning commands...");
-        var res = await ObdCommands(_terminalCommandContext["connectedDevice"]).runBeginCommands();
+        var res = await ObdCommands(_terminalCommandContext["connectedDevice"]).runBeginCommands(_addOutput);
         if (res) {
           _addOutput("Ran commands successfully");
         } else {

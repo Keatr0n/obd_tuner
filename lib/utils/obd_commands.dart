@@ -21,21 +21,33 @@ class ObdCommands {
   /// This will handle the command terminator. So just send the command as a string and it will do the rest.
   ///
   /// By default expectedResponse will match the value as a hex string, like "41 0D".
-  Future<void> _send(String data, {Pattern? expectedResponse, bool matchAsHex = true, Duration? delay}) async {
+  ///
+  /// if ignorePromptCharacter is true, we will not wait for the prompt character before returning.
+  Future<void> _send(
+    String data, {
+    Pattern? expectedResponse,
+    bool matchAsHex = true,
+    Duration? delay,
+    bool ignorePromptCharacter = false,
+  }) async {
     if (data.startsWith(RegExp(r"AT", caseSensitive: false))) {
       await device.sendData(data.codeUnits + [commandTerminator]);
     } else {
       await device.sendData(data.split(" ").map((e) => int.parse("0x$e")).toList() + [commandTerminator]);
     }
 
-    await _awaitData(">", false);
+    if (!ignorePromptCharacter) {
+      await _awaitData(">", false);
+      return;
+    }
 
-    // if (expectedResponse != null) {
-    //   await _awaitData(expectedResponse, matchAsHex);
-    // } else {
-    //   // this should allow enough time for the reader to process the command
-    //   await Future.delayed(delay ?? const Duration(milliseconds: 200));
-    // }
+    if (expectedResponse != null) {
+      await _awaitData(expectedResponse, matchAsHex);
+      return;
+    }
+
+    // this should allow enough time for the reader to process the command
+    await Future.delayed(delay ?? const Duration(milliseconds: 250));
 
     return;
   }
@@ -51,10 +63,10 @@ class ObdCommands {
 
   Future<bool> setupDevice([void Function(String)? onEvent]) async {
     final sub = device.listenToData()?.listen((data) {
-      onEvent?.call(ascii.decode(data));
+      // onEvent?.call(ascii.decode(data));
     });
     try {
-      await _send("AT Z", delay: const Duration(milliseconds: 500));
+      await _send("AT Z", delay: const Duration(milliseconds: 500), ignorePromptCharacter: true);
       await _send("AT SP6");
       await _send("AT CAF0");
       await _send("AT CEA");
@@ -73,8 +85,8 @@ class ObdCommands {
     });
 
     await _send("AT R0"); // turns off responses
-    await _send("AT SH 750");
-    await _send("5F 02 27 51");
+    await _send("AT SH 750", ignorePromptCharacter: true);
+    await _send("5F 02 27 51", ignorePromptCharacter: true);
     await _send("AT R1"); // turns on responses
     await _send("AT SH 721");
 
@@ -116,10 +128,10 @@ class ObdCommands {
     await _send(authData.join(" "), expectedResponse: "02 67 02");
 
     await _send("AT R0");
-    await _send("AT SH 720");
-    await _send("02 A0 27");
-    await _send("02 A0 27");
-    await _send("02 A0 27");
+    await _send("AT SH 720", ignorePromptCharacter: true);
+    await _send("02 A0 27", ignorePromptCharacter: true);
+    await _send("02 A0 27", ignorePromptCharacter: true);
+    await _send("02 A0 27", ignorePromptCharacter: true);
 
     await _send("AT R1");
     await _send("AT SH 721");
@@ -129,11 +141,11 @@ class ObdCommands {
     await _send("02 10 02", expectedResponse: "01 50");
 
     await _send("AT R0");
-    await _send("AT SH 0001");
-    await _send("01");
-    await _send("01");
-    await _send("06 20 07 01 00 02");
-    await _send("02 07");
+    await _send("AT SH 0001", ignorePromptCharacter: true);
+    await _send("01", ignorePromptCharacter: true);
+    await _send("01", ignorePromptCharacter: true);
+    await _send("06 20 07 01 00 02", ignorePromptCharacter: true);
+    await _send("02 07", ignorePromptCharacter: true);
     await _send("AT R1");
     await _send("04 64 0A A5 51", expectedResponse: "01 3C");
 

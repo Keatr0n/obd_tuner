@@ -37,7 +37,7 @@ class _HomePageState extends State<HomePage> {
   _HomePageState() {
     term = Terminal(
       commandStream: commandStreamController.stream,
-      height: 200, // MediaQuery.of(context).size.width * 0.8,
+      height: MediaQuery.of(context).size.width * 0.6,
       width: 300, // MediaQuery.of(context).size.width - 50,
     );
   }

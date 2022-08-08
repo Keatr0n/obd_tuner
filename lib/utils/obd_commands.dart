@@ -49,9 +49,9 @@ class ObdCommands {
     });
     try {
       await _send("AT Z", delay: const Duration(milliseconds: 500));
-      await _send("AT SP6");
-      await _send("AT CAF0");
-      await _send("AT CEA");
+      await _send("AT SP6", expectedResponse: RegExp(r"[ -z]"), matchAsHex: false);
+      await _send("AT CAF0", expectedResponse: RegExp(r"[ -z]"), matchAsHex: false);
+      await _send("AT CEA", expectedResponse: RegExp(r"[ -z]"), matchAsHex: false);
     } catch (e) {
       print(e);
       await sub?.cancel();
@@ -87,7 +87,7 @@ class ObdCommands {
       return false;
     }
 
-    await _send(authData.join(" "), expectedResponse: "2 67 02");
+    await _send(authData.join(" "), expectedResponse: "02 67 02");
 
     await _send("AT SH 7E0");
     await _send("02 27 01");
@@ -107,7 +107,7 @@ class ObdCommands {
       return false;
     }
 
-    await _send(authData.join(" "), expectedResponse: "2 67 02");
+    await _send(authData.join(" "), expectedResponse: "02 67 02");
 
     await _send("AT R0");
     await _send("AT SH 720");

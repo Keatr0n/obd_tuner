@@ -13,23 +13,29 @@ class ObdCommands {
 
   Future<String?> _awaitData(Pattern pattern, [bool asHex = false]) async {
     if (asHex) {
-      return ascii.decode(await device.listenToData()?.firstWhere((el) => el.map((e) => e.toRadixString(16)).toList().join(" ").contains(pattern), orElse: () => []) ?? []);
+      return ascii.decode(await device.listenToData()?.firstWhere((el) => el.map((e) => e.toRadixString(16)).toList().join(" ").contains(pattern), orElse: () => [0]) ?? [0]);
     }
-    return ascii.decode(await device.listenToData()?.firstWhere((el) => ascii.decode(el).contains(pattern), orElse: () => []) ?? []);
+    return ascii.decode(await device.listenToData()?.firstWhere((el) => ascii.decode(el).contains(pattern), orElse: () => [0]) ?? [0]);
   }
 
   /// This will handle the command terminator. So just send the command as a string and it will do the rest.
   ///
-  /// By default it will match the value as a hex string, like "41 0D".
+  /// By default expectedResponse will match the value as a hex string, like "41 0D".
   Future<void> _send(String data, {Pattern? expectedResponse, bool matchAsHex = true, Duration? delay}) async {
-    await device.sendData(data.codeUnits + [commandTerminator]);
-
-    if (expectedResponse != null) {
-      await _awaitData(expectedResponse, matchAsHex);
+    if (data.startsWith(RegExp(r"AT", caseSensitive: false))) {
+      await device.sendData(data.codeUnits + [commandTerminator]);
     } else {
-      // this should allow enough time for the reader to process the command
-      await Future.delayed(delay ?? const Duration(milliseconds: 200));
+      await device.sendData(data.split(" ").map((e) => int.parse("0x$e")).toList() + [commandTerminator]);
     }
+
+    await _awaitData(">", false);
+
+    // if (expectedResponse != null) {
+    //   await _awaitData(expectedResponse, matchAsHex);
+    // } else {
+    //   // this should allow enough time for the reader to process the command
+    //   await Future.delayed(delay ?? const Duration(milliseconds: 200));
+    // }
 
     return;
   }
@@ -49,11 +55,11 @@ class ObdCommands {
     });
     try {
       await _send("AT Z", delay: const Duration(milliseconds: 500));
-      await _send("AT SP6", expectedResponse: RegExp(r"[ -z]"), matchAsHex: false);
-      await _send("AT CAF0", expectedResponse: RegExp(r"[ -z]"), matchAsHex: false);
-      await _send("AT CEA", expectedResponse: RegExp(r"[ -z]"), matchAsHex: false);
+      await _send("AT SP6");
+      await _send("AT CAF0");
+      await _send("AT CEA");
     } catch (e) {
-      print(e);
+      onEvent?.call("Error: $e");
       await sub?.cancel();
       return false;
     }

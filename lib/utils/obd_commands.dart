@@ -28,7 +28,7 @@ class ObdCommands {
       await _awaitData(expectedResponse, matchAsHex);
     } else {
       // this should allow enough time for the reader to process the command
-      await Future.delayed(const Duration(milliseconds: 90));
+      await Future.delayed(const Duration(milliseconds: 200));
     }
 
     return;
@@ -85,6 +85,8 @@ class ObdCommands {
       print(e);
       return false;
     }
+
+    await _send("02 27 01");
 
     await _send(authData.join(" "), expectedResponse: "2 67 02");
 

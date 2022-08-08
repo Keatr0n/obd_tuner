@@ -30,11 +30,7 @@ class ObdCommands {
     Duration? delay,
     bool ignorePromptCharacter = false,
   }) async {
-    if (data.startsWith(RegExp(r"AT", caseSensitive: false))) {
-      await device.sendData(data.codeUnits + [commandTerminator]);
-    } else {
-      await device.sendData(data.split(" ").map((e) => int.parse("0x$e")).toList() + [commandTerminator]);
-    }
+    await device.sendData(data.codeUnits + [commandTerminator]);
 
     if (!ignorePromptCharacter) {
       await _awaitData(">");
@@ -80,9 +76,9 @@ class ObdCommands {
   }
 
   Future<bool> runBeginCommands([void Function(String)? onEvent]) async {
-    final sub = device.listenToData()?.listen((data) {
-      onEvent?.call(ascii.decode(data));
-    });
+    // final sub = device.listenToData()?.listen((data) {
+    //   onEvent?.call(ascii.decode(data));
+    // });
 
     await _send("AT R0"); // turns off responses
     await _send("AT SH 750", ignorePromptCharacter: true);

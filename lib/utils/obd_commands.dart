@@ -21,14 +21,14 @@ class ObdCommands {
   /// This will handle the command terminator. So just send the command as a string and it will do the rest.
   ///
   /// By default it will match the value as a hex string, like "41 0D".
-  Future<void> _send(String data, {Pattern? expectedResponse, bool matchAsHex = true}) async {
+  Future<void> _send(String data, {Pattern? expectedResponse, bool matchAsHex = true, Duration? delay}) async {
     await device.sendData(data.codeUnits + [commandTerminator]);
 
     if (expectedResponse != null) {
       await _awaitData(expectedResponse, matchAsHex);
     } else {
       // this should allow enough time for the reader to process the command
-      await Future.delayed(const Duration(milliseconds: 200));
+      await Future.delayed(delay ?? const Duration(milliseconds: 200));
     }
 
     return;
@@ -48,7 +48,7 @@ class ObdCommands {
       onEvent?.call(ascii.decode(data));
     });
     try {
-      await _send("AT Z");
+      await _send("AT Z", delay: const Duration(milliseconds: 500));
       await _send("AT SP6");
       await _send("AT CAF0");
       await _send("AT CEA");
@@ -70,11 +70,12 @@ class ObdCommands {
     await _send("AT SH 750");
     await _send("5F 02 27 51");
     await _send("AT R1"); // turns on responses
+    await _send("AT SH 721");
 
     // I need to fetch the response here, so I'm gonna await the response rather than the command
-    _send("AT SH 721", expectedResponse: RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00"));
+    _send("02 27 01", expectedResponse: RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00"));
 
-    final List<String>? authData = (await _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")))?.split(" ");
+    List<String>? authData = (await _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")))?.split(" ");
 
     if (authData == null) return false;
 
@@ -86,7 +87,25 @@ class ObdCommands {
       return false;
     }
 
+    await _send(authData.join(" "), expectedResponse: "2 67 02");
+
+    await _send("AT SH 7E0");
     await _send("02 27 01");
+
+    // I need to fetch the response here, so I'm gonna await the response rather than the command
+    _send("02 27 01", expectedResponse: RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00"));
+
+    authData = (await _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")))?.split(" ");
+
+    if (authData == null) return false;
+
+    try {
+      authData[4] = (int.parse("0x${authData[4]}") ^ 0x60).toRadixString(16);
+      authData[5] = (int.parse("0x${authData[5]}") ^ 0x60).toRadixString(16);
+    } catch (e) {
+      print(e);
+      return false;
+    }
 
     await _send(authData.join(" "), expectedResponse: "2 67 02");
 

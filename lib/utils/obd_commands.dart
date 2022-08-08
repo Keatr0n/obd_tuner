@@ -87,9 +87,9 @@ class ObdCommands {
     await _send("AT SH 721");
 
     // I need to fetch the response here, so I'm gonna await the response rather than the command
-    _send("02 27 01", expectedResponse: RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00"));
+    _send("02 27 01", ignorePromptCharacter: true);
 
-    List<String>? authData = (await _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")))?.split(" ");
+    List<String>? authData = (RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00").stringMatch(await _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")) ?? ""))?.split(" ");
 
     if (authData == null) return false;
 
@@ -104,14 +104,12 @@ class ObdCommands {
     await _send(authData.join(" "), expectedResponse: "02 67 02");
 
     await _send("AT SH 7E0");
-    await _send("02 27 01");
 
-    // I need to fetch the response here, so I'm gonna await the response rather than the command
-    _send("02 27 01", expectedResponse: RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00"));
+    _send("02 27 01", ignorePromptCharacter: true);
 
-    authData = (await _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")))?.split(" ");
+    authData = (RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00").stringMatch(await _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")) ?? ""))?.split(" ");
 
-    if (authData == null) return false;
+    if (authData == null || authData.length < 8) return false;
 
     try {
       authData[4] = (int.parse("0x${authData[4]}") ^ 0x60).toRadixString(16);
@@ -121,7 +119,7 @@ class ObdCommands {
       return false;
     }
 
-    await _send(authData.join(" "), expectedResponse: "02 67 02");
+    await _send(authData.join(" "));
 
     await _send("AT R0");
     await _send("AT SH 720", ignorePromptCharacter: true);

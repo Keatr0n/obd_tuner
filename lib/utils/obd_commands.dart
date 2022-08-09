@@ -109,6 +109,8 @@ class ObdCommands {
       onEvent?.call("Error: Auth data did not match expected format\n$authComplete");
     }
 
+    onEvent?.call("Sending: $authComplete");
+
     await _send(authComplete, expectedResponse: "02 67 02");
 
     await _send("AT SH 7E0");
@@ -134,6 +136,8 @@ class ObdCommands {
     if (!RegExp(r"06 67 02(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
       onEvent?.call("Error: Auth data did not match expected format\n$authComplete");
     }
+
+    onEvent?.call("Sending: $authComplete");
 
     await _send(authComplete);
 

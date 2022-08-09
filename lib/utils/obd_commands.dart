@@ -94,7 +94,8 @@ class ObdCommands {
     if (authData == null) return false;
 
     try {
-      authData[0] = "06";
+      authData[0] = "006";
+      authData[1] = "27";
       authData[2] = "02";
       authData[4] = (int.parse("0x${authData[4]}") ^ 0x60).toRadixString(16);
       authData[5] = (int.parse("0x${authData[5]}") ^ 0x60).toRadixString(16);
@@ -122,7 +123,8 @@ class ObdCommands {
     if (authData == null || authData.length < 8) return false;
 
     try {
-      authData[0] = "06";
+      authData[0] = "006";
+      authData[1] = "27";
       authData[2] = "02";
       authData[4] = (int.parse("0x${authData[4]}") ^ 0x60).toRadixString(16);
       authData[5] = (int.parse("0x${authData[5]}") ^ 0x60).toRadixString(16);

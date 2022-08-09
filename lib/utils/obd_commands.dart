@@ -63,9 +63,12 @@ class ObdCommands {
     });
     try {
       await _send("AT Z");
+      await _send("AT AL");
       await _send("AT SP6");
       await _send("AT CAF0");
       await _send("AT CEA");
+      await _send("AT BI");
+      await _send("AT V0");
     } catch (e, s) {
       onEvent?.call("Error: $e\n$s");
       await sub?.cancel();
@@ -94,11 +97,14 @@ class ObdCommands {
     if (authData == null) return false;
 
     try {
-      authData[0] = "006";
+      authData[0] = "06";
       authData[1] = "27";
       authData[2] = "02";
       authData[4] = (int.parse("0x${authData[4]}") ^ 0x60).toRadixString(16);
       authData[5] = (int.parse("0x${authData[5]}") ^ 0x60).toRadixString(16);
+
+      if (authData[4].length == 1) authData[4] = "0${authData[4]}";
+      if (authData[5].length == 1) authData[5] = "0${authData[5]}";
     } catch (e) {
       print(e);
       return false;
@@ -106,7 +112,7 @@ class ObdCommands {
 
     String authComplete = authData.join(" ");
 
-    if (!RegExp(r"06 67 02(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
+    if (!RegExp(r"06 27 02(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
       onEvent?.call("Error: Auth data did not match expected format\n$authComplete");
     }
 
@@ -123,11 +129,14 @@ class ObdCommands {
     if (authData == null || authData.length < 8) return false;
 
     try {
-      authData[0] = "006";
+      authData[0] = "06";
       authData[1] = "27";
       authData[2] = "02";
       authData[4] = (int.parse("0x${authData[4]}") ^ 0x60).toRadixString(16);
       authData[5] = (int.parse("0x${authData[5]}") ^ 0x60).toRadixString(16);
+
+      if (authData[4].length == 1) authData[4] = "0${authData[4]}";
+      if (authData[5].length == 1) authData[5] = "0${authData[5]}";
     } catch (e) {
       print(e);
       return false;
@@ -135,7 +144,7 @@ class ObdCommands {
 
     authComplete = authData.join(" ");
 
-    if (!RegExp(r"06 67 02(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
+    if (!RegExp(r"06 27 02(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
       onEvent?.call("Error: Auth data did not match expected format\n$authComplete");
     }
 
@@ -143,7 +152,7 @@ class ObdCommands {
 
     await _send(authComplete);
 
-    await _send("AT R0");
+    await _send("AAT R0");
     await _send("AT SH 720", ignorePromptCharacter: true);
     await _send("02 A0 27", ignorePromptCharacter: true);
     await _send("02 A0 27", ignorePromptCharacter: true);

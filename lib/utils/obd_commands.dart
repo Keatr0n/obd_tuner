@@ -29,8 +29,11 @@ class ObdCommands {
     bool matchAsHex = true,
     int? delay,
     bool ignorePromptCharacter = false,
+    bool unsafelySendWithoutDelay = false,
   }) async {
     await device.sendData(data.codeUnits + [commandTerminator]);
+
+    if (unsafelySendWithoutDelay) return;
 
     if (!ignorePromptCharacter) {
       await _awaitData(">");
@@ -180,10 +183,10 @@ class ObdCommands {
 
     await _send("AT R0");
     await _send("AT SH 001");
-    await _send("01");
-    await _send("01");
-    await _send("06 20 07 01 00 02");
-    await _send("02 07");
+    await _send("01", unsafelySendWithoutDelay: true);
+    await _send("01", unsafelySendWithoutDelay: true);
+    await _send("06 20 07 01 00 02", unsafelySendWithoutDelay: true);
+    await _send("02 07", unsafelySendWithoutDelay: true);
     // await _send("AT R1");
     await _send("04 64 0A A5 51"); // expectedResponse: "01 3C");
 

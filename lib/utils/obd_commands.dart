@@ -94,6 +94,8 @@ class ObdCommands {
     if (authData == null) return false;
 
     try {
+      authData[0] = "06";
+      authData[2] = "02";
       authData[4] = (int.parse("0x${authData[4]}") ^ 0x60).toRadixString(16);
       authData[5] = (int.parse("0x${authData[5]}") ^ 0x60).toRadixString(16);
     } catch (e) {
@@ -103,7 +105,7 @@ class ObdCommands {
 
     String authComplete = authData.join(" ");
 
-    if (!RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
+    if (!RegExp(r"06 67 02(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
       onEvent?.call("Error: Auth data did not match expected format\n$authComplete");
     }
 
@@ -118,6 +120,8 @@ class ObdCommands {
     if (authData == null || authData.length < 8) return false;
 
     try {
+      authData[0] = "06";
+      authData[2] = "02";
       authData[4] = (int.parse("0x${authData[4]}") ^ 0x60).toRadixString(16);
       authData[5] = (int.parse("0x${authData[5]}") ^ 0x60).toRadixString(16);
     } catch (e) {
@@ -127,7 +131,7 @@ class ObdCommands {
 
     authComplete = authData.join(" ");
 
-    if (!RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
+    if (!RegExp(r"06 67 02(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
       onEvent?.call("Error: Auth data did not match expected format\n$authComplete");
     }
 

@@ -27,7 +27,7 @@ class ObdCommands {
     String data, {
     Pattern? expectedResponse,
     bool matchAsHex = true,
-    Duration? delay,
+    int? delay,
     bool ignorePromptCharacter = false,
   }) async {
     await device.sendData(data.codeUnits + [commandTerminator]);
@@ -43,7 +43,7 @@ class ObdCommands {
     }
 
     // this should allow enough time for the reader to process the command
-    await Future.delayed(delay ?? const Duration(milliseconds: 250));
+    await Future.delayed(Duration(milliseconds: delay ?? 100));
 
     return;
   }
@@ -87,30 +87,38 @@ class ObdCommands {
     await _send("AT SH 750", ignorePromptCharacter: true);
     await _send("5F 02 27 51", ignorePromptCharacter: true);
     await _send("AT R1"); // turns on responses
+    await _send("02 09 04");
     await _send("AT SH 721");
 
     // I need to fetch the response here, so I'm gonna await the response rather than the command
     _send("02 27 01", ignorePromptCharacter: true);
 
-    List<String>? authData = (RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00").stringMatch(await _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")) ?? ""))?.split(" ");
+    List<String>? authData;
 
-    if (authData == null) return false;
+    await Future.wait([
+      _awaitData(">"),
+      _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")).then((value) {
+        authData = RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00").stringMatch(value ?? "")?.split(" ");
+      }),
+    ]);
+
+    if (authData == null || (authData?.length ?? 0) < 8) return false;
 
     try {
-      authData[0] = "06";
-      authData[1] = "27";
-      authData[2] = "02";
-      authData[4] = (int.parse("0x${authData[4]}") ^ 0x60).toRadixString(16);
-      authData[5] = (int.parse("0x${authData[5]}") ^ 0x60).toRadixString(16);
+      authData![0] = "06";
+      authData![1] = "27";
+      authData![2] = "02";
+      authData![4] = (int.parse("0x${authData![4]}") ^ 0x60).toRadixString(16);
+      authData![5] = (int.parse("0x${authData![5]}") ^ 0x60).toRadixString(16);
 
-      if (authData[4].length == 1) authData[4] = "0${authData[4]}";
-      if (authData[5].length == 1) authData[5] = "0${authData[5]}";
+      if (authData![4].length == 1) authData![4] = "0${authData![4]}";
+      if (authData![5].length == 1) authData![5] = "0${authData![5]}";
     } catch (e) {
       print(e);
       return false;
     }
 
-    String authComplete = authData.join(" ");
+    String authComplete = authData!.join(" ");
 
     if (!RegExp(r"06 27 02(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
       onEvent?.call("Error: Auth data did not match expected format\n$authComplete");
@@ -124,25 +132,30 @@ class ObdCommands {
 
     _send("02 27 01", ignorePromptCharacter: true);
 
-    authData = (RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00").stringMatch(await _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")) ?? ""))?.split(" ");
+    await Future.wait([
+      _awaitData(">"),
+      _awaitData(RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00")).then((value) {
+        authData = RegExp(r"06 67 01(\s[0-9a-fA-F]{2}){4} 00").stringMatch(value ?? "")?.split(" ");
+      }),
+    ]);
 
-    if (authData == null || authData.length < 8) return false;
+    if (authData == null || (authData?.length ?? 0) < 8) return false;
 
     try {
-      authData[0] = "06";
-      authData[1] = "27";
-      authData[2] = "02";
-      authData[4] = (int.parse("0x${authData[4]}") ^ 0x60).toRadixString(16);
-      authData[5] = (int.parse("0x${authData[5]}") ^ 0x60).toRadixString(16);
+      authData![0] = "06";
+      authData![1] = "27";
+      authData![2] = "02";
+      authData![4] = (int.parse("0x${authData![4]}") ^ 0x60).toRadixString(16);
+      authData![5] = (int.parse("0x${authData![5]}") ^ 0x60).toRadixString(16);
 
-      if (authData[4].length == 1) authData[4] = "0${authData[4]}";
-      if (authData[5].length == 1) authData[5] = "0${authData[5]}";
+      if (authData![4].length == 1) authData![4] = "0${authData![4]}";
+      if (authData![5].length == 1) authData![5] = "0${authData![5]}";
     } catch (e) {
       print(e);
       return false;
     }
 
-    authComplete = authData.join(" ");
+    authComplete = authData!.join(" ");
 
     if (!RegExp(r"06 27 02(\s[0-9a-fA-F]{2}){4} 00").hasMatch(authComplete)) {
       onEvent?.call("Error: Auth data did not match expected format\n$authComplete");
@@ -152,7 +165,7 @@ class ObdCommands {
 
     await _send(authComplete);
 
-    await _send("AAT R0");
+    await _send("AT R0");
     await _send("AT SH 720", ignorePromptCharacter: true);
     await _send("02 A0 27", ignorePromptCharacter: true);
     await _send("02 A0 27", ignorePromptCharacter: true);
@@ -167,12 +180,12 @@ class ObdCommands {
 
     await _send("AT R0");
     await _send("AT SH 001", ignorePromptCharacter: true);
-    await _send("01", ignorePromptCharacter: true);
-    await _send("01", ignorePromptCharacter: true);
-    await _send("06 20 07 01 00 02", ignorePromptCharacter: true);
-    await _send("02 07", ignorePromptCharacter: true);
-    await _send("AT R1");
-    await _send("04 64 0A A5 51", expectedResponse: "01 3C");
+    await _send("01", ignorePromptCharacter: true, delay: 10);
+    await _send("01", ignorePromptCharacter: true, delay: 10);
+    await _send("06 20 07 01 00 02", ignorePromptCharacter: true, delay: 10);
+    await _send("02 07", ignorePromptCharacter: true, delay: 10);
+    // await _send("AT R1");
+    await _send("04 64 0A A5 51", ignorePromptCharacter: true, delay: 10); // expectedResponse: "01 3C");
 
     return true;
   }

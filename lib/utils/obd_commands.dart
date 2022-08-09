@@ -84,14 +84,14 @@ class ObdCommands {
     // });
 
     await _send("AT R0"); // turns off responses
-    await _send("AT SH 750", ignorePromptCharacter: true);
-    await _send("5F 02 27 51", ignorePromptCharacter: true);
+    await _send("AT SH 750");
+    await _send("5F 02 27 51");
     await _send("AT R1"); // turns on responses
     await _send("02 09 04");
     await _send("AT SH 721");
 
     // I need to fetch the response here, so I'm gonna await the response rather than the command
-    _send("02 27 01", ignorePromptCharacter: true);
+    _send("02 27 01");
 
     List<String>? authData;
 
@@ -130,7 +130,7 @@ class ObdCommands {
 
     await _send("AT SH 7E0");
 
-    _send("02 27 01", ignorePromptCharacter: true);
+    _send("02 27 01");
 
     await Future.wait([
       _awaitData(">"),
@@ -166,26 +166,26 @@ class ObdCommands {
     await _send(authComplete);
 
     await _send("AT R0");
-    await _send("AT SH 720", ignorePromptCharacter: true);
-    await _send("02 A0 27", ignorePromptCharacter: true);
-    await _send("02 A0 27", ignorePromptCharacter: true);
-    await _send("02 A0 27", ignorePromptCharacter: true);
+    await _send("AT SH 720");
+    await _send("02 A0 27");
+    await _send("02 A0 27");
+    await _send("02 A0 27");
 
     await _send("AT R1");
     await _send("AT SH 721");
-    await _send("02 10 02", expectedResponse: "01 50");
+    await _send("02 10 02");
 
     await _send("AT SH 7E0");
-    await _send("02 10 02", expectedResponse: "01 50");
+    await _send("02 10 02");
 
     await _send("AT R0");
-    await _send("AT SH 001", ignorePromptCharacter: true);
-    await _send("01", ignorePromptCharacter: true, delay: 10);
-    await _send("01", ignorePromptCharacter: true, delay: 10);
-    await _send("06 20 07 01 00 02", ignorePromptCharacter: true, delay: 10);
-    await _send("02 07", ignorePromptCharacter: true, delay: 10);
+    await _send("AT SH 001");
+    await _send("01");
+    await _send("01");
+    await _send("06 20 07 01 00 02");
+    await _send("02 07");
     // await _send("AT R1");
-    await _send("04 64 0A A5 51", ignorePromptCharacter: true, delay: 10); // expectedResponse: "01 3C");
+    await _send("04 64 0A A5 51"); // expectedResponse: "01 3C");
 
     return true;
   }

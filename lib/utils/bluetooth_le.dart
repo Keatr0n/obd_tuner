@@ -1,5 +1,4 @@
 import 'package:flutter_blue/flutter_blue.dart' as fb;
-import 'package:flutter_blue/gen/flutterblue.pb.dart' as pb;
 import 'package:permission_handler/permission_handler.dart';
 
 import 'bluetooth.dart';

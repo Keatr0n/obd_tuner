@@ -3,9 +3,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:obd_tuner/utils/bluetooth.dart';
-import 'package:obd_tuner/utils/bluetooth_classic.dart';
 import 'package:obd_tuner/utils/bluetooth_le.dart';
+import 'package:obd_tuner/utils/bluetooth_le_reactive.dart';
+import 'package:obd_tuner/utils/bluetooth_messages/obdii_messages.dart';
 import 'package:obd_tuner/utils/obd_commands.dart';
+import 'package:obd_tuner/utils/obd_commands/engine_code_command.dart';
 
 enum TerminalDataType {
   input,
@@ -90,7 +92,7 @@ class _TerminalCommandHandler {
 
   void _scanLE() {
     _addOutput("Scanning for devices...");
-    BluetoothLE().scanForDevice(_addOutput).then((devices) {
+    BluetoothLEReactive().scanForDevice(_addOutput).then((devices) {
       if (devices.isNotEmpty) {
         _terminalCommandContext["devices"] = devices;
 
@@ -110,22 +112,22 @@ class _TerminalCommandHandler {
 
   void _scanClassic() {
     _addOutput("Scanning for devices...");
-    BluetoothClassic().scanForDevice(_addOutput).then((devices) {
-      if (devices.isNotEmpty) {
-        _terminalCommandContext["devices"] = devices;
+    // BluetoothClassic().scanForDevice(_addOutput).then((devices) {
+    //   if (devices.isNotEmpty) {
+    //     _terminalCommandContext["devices"] = devices;
 
-        var i = -1;
-        _addOutput(devices.map((e) {
-          i++;
-          return "$i: ${e.address} ${e.name != "" ? "(${e.name})" : ""}\n";
-        }).reduce((value, element) => "$value$element"));
+    //     var i = -1;
+    //     _addOutput(devices.map((e) {
+    //       i++;
+    //       return "$i: ${e.address} ${e.name != "" ? "(${e.name})" : ""}\n";
+    //     }).reduce((value, element) => "$value$element"));
 
-        _addOutput("Type \"connect [number]\" to connect to a device");
-        _addOutput("If a device you're looking for isn't here,\ntry pairing with it in your phones settings first");
-      } else {
-        _addOutput("No devices found");
-      }
-    });
+    //     _addOutput("Type \"connect [number]\" to connect to a device");
+    //     _addOutput("If a device you're looking for isn't here,\ntry pairing with it in your phones settings first");
+    //   } else {
+    //     _addOutput("No devices found");
+    //   }
+    // });
   }
 
   void _connect(String args) {
@@ -220,8 +222,16 @@ class _TerminalCommandHandler {
         _connect(args);
         break;
 
+      case 'live':
+        (_terminalCommandContext["connectedDevice"] as BluetoothDevice).runCommand(EngineCodeCommand());
+        break;
+
       case 'read':
-        (_terminalCommandContext["connectedDevice"] as BluetoothDevice).readData().then((value) => print(value));
+        (_terminalCommandContext["connectedDevice"] as BluetoothDevice).readData().then((value) => print(ascii.decode(value!)));
+        break;
+
+      case 'remove':
+        (_terminalCommandContext["connectedDevice"] as BluetoothDevice).obdCommand = null;
         break;
 
       case 'test':

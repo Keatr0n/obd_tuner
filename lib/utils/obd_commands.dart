@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:obd_tuner/utils/bluetooth.dart';
+import 'package:obd_tuner/vehicle.dart';
 
 /// # ObdCommands
 ///
@@ -79,6 +81,77 @@ class ObdCommands {
     }
     await sub?.cancel();
     return true;
+  }
+
+  Stream<ETVehicleLiveData> liveDataStream() {
+    late StreamController<ETVehicleLiveData> controller;
+    bool isRunning = false;
+    // https://en.wikipedia.org/wiki/OBD-II_PIDs#Service_01_PID_78
+    // need to check if it's actually supported, if not just leave it 0
+    // bool isEgtSupported = true;
+
+    void cancelStream() {
+      isRunning = false;
+      controller.close();
+    }
+
+    void dataFetcher() async {
+      // switch to Auto mode which will allow us to read the live data
+      await _send("AT SP 0", expectedResponse: "OK");
+      // confirm that it is in auto mode
+      await _send("AT DP", expectedResponse: "AUTO");
+
+      while (isRunning && !controller.isClosed) {
+        // a lot of this is pulled from here https://www.obdsol.com/knowledgebase/obd-software-development/reading-real-time-data/
+        // but basically, 010C is the command to access the RPM, the ECU will respond with 41 0C XX XX where XX XX is the RPM
+        _send("010C");
+
+        // this utter mess is extracting the RPM from the response, making it base 10, dividing it by 4, then returning it as a string
+        final int rpm = (int.tryParse("0x${(await _awaitData("41 0C"))?.replaceFirst("41 0C ", "").replaceAll(" ", "")}") ?? 0 ~/ 4);
+
+        // this is the same as above, but for the speed
+        _send("010D");
+
+        final int speed = int.tryParse("0x${(await _awaitData("41 0D"))?.replaceFirst("41 0D ", "").replaceAll(" ", "")}") ?? 0;
+
+        // this is the same as above, but for the coolant temperature
+        _send("0105");
+
+        final double coolantTemp = (double.tryParse("0x${(await _awaitData("41 05"))?.replaceFirst("41 05 ", "").replaceAll(" ", "")}") ?? 0 - 40);
+
+        // now for voltage
+        _send("AT RV");
+
+        final double voltage = double.tryParse(await _awaitData(RegExp(r"[0-9]")) ?? "0") ?? 0 / 10;
+
+        if (isRunning && !controller.isClosed) {
+          controller.add(ETVehicleLiveData(
+            rpm: rpm,
+            speed: speed,
+            coolantTemp: coolantTemp,
+            voltage: voltage,
+            // https://mechanics.stackexchange.com/questions/45239/calculate-boost-from-map-sensor-via-obd-ii
+            // this might help for boost pressure
+            boostPressure: 0,
+            egt: 0,
+          ));
+        }
+      }
+
+      return;
+    }
+
+    void runDataFetcher() {
+      isRunning = true;
+      dataFetcher();
+    }
+
+    controller = StreamController<ETVehicleLiveData>.broadcast(
+      onListen: runDataFetcher,
+      onCancel: cancelStream,
+    );
+
+    return controller.stream;
   }
 
   Future<bool> runBeginCommands([void Function(String)? onEvent]) async {

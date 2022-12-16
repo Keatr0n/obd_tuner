@@ -36,16 +36,19 @@ dependencies:
   #   git:
   #     url: https://github.com/Fyresite/flutter_blue.git
   flutter_bluetooth_serial: ^0.4.0
+  flutter_reactive_ble: ^5.0.3
 
   permission_handler: ^10.0.0
 
   async: ^2.9.0
   # idk why this is here but I'm just gonna leave it 
   cupertino_icons: ^1.0.2
+  quick_blue: ^0.4.1+1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

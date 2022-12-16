@@ -53,14 +53,21 @@ class BluetoothLEDevice implements BluetoothDevice {
 
   Stream<List<int>>? _stream;
 
-  fb.BluetoothCharacteristic? _readCharacteristic;
-  fb.BluetoothCharacteristic? _writeCharacteristic;
+  List<fb.BluetoothCharacteristic>? _readCharacteristic;
+  List<fb.BluetoothCharacteristic>? _writeCharacteristic;
+
+  // Future<void> loadReadCharacteristics() {}
+
+  // Future<void> loadWriteCharacteristics() {}
+
+  // Future<void> loadCharacteristics() {}
 
   @override
   Future<bool> connect() async {
     return device.connect().then((_) {
       _isConnected = true;
       readData();
+
       return true;
     }, onError: (e) {
       print(e);
@@ -122,6 +129,7 @@ class BluetoothLEDevice implements BluetoothDevice {
         for (var characteristic in service.characteristics) {
           if (characteristic.properties.read) {
             readCharacteristics.add(characteristic);
+            // characteristic.setNotifyValue(notify)
             // _readCharacteristic = characteristic;
           }
         }

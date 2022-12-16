@@ -220,6 +220,10 @@ class _TerminalCommandHandler {
         _connect(args);
         break;
 
+      case 'read':
+        (_terminalCommandContext["connectedDevice"] as BluetoothDevice).readData().then((value) => print(value));
+        break;
+
       case 'test':
         _testCommand();
         break;

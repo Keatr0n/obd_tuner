@@ -1,3 +1,8 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:developer';
+
+import 'package:async/async.dart';
 import 'package:flutter_blue/flutter_blue.dart' as fb;
 import 'package:permission_handler/permission_handler.dart';
 
@@ -78,50 +83,76 @@ class BluetoothLEDevice implements BluetoothDevice {
   Future<void> sendData(List<int> data) async {
     if (!_isConnected) return;
 
+    final List<fb.BluetoothCharacteristic> writeCharacteristics = [];
+
     if (_writeCharacteristic == null) {
-      var services = await device.services.first;
+      var services = await device.discoverServices();
+
+      if (services.isEmpty) log("No services found when trying to write data");
 
       for (var service in services) {
         if (service.characteristics.isNotEmpty) {
           for (var characteristic in service.characteristics) {
             if (characteristic.properties.write) {
-              _writeCharacteristic = characteristic;
-              break;
+              writeCharacteristics.add(characteristic);
             }
           }
         }
       }
     }
 
-    if (_writeCharacteristic == null) return;
-
-    return _writeCharacteristic?.write(data);
+    for (final characteristic in writeCharacteristics) {
+      (await characteristic.write(data));
+    }
   }
 
   @override
   Future<List<int>?> readData() async {
     if (!_isConnected) return [];
 
-    if (_readCharacteristic == null) {
-      var services = await device.services.first;
+    final List<fb.BluetoothCharacteristic> readCharacteristics = [];
 
-      for (var service in services) {
-        if (service.characteristics.isNotEmpty) {
-          for (var characteristic in service.characteristics) {
-            if (characteristic.properties.read) {
-              _readCharacteristic = characteristic;
-              break;
-            }
+    // if (_readCharacteristic == null) {
+    var services = await device.discoverServices();
+
+    if (services.isEmpty) log("No services found when trying to read data");
+
+    for (var service in services) {
+      if (service.characteristics.isNotEmpty) {
+        for (var characteristic in service.characteristics) {
+          if (characteristic.properties.read) {
+            readCharacteristics.add(characteristic);
+            // _readCharacteristic = characteristic;
           }
         }
       }
     }
+    // }
 
-    if (_readCharacteristic == null) return [];
+    // if (_readCharacteristic == null) return [];
 
-    _stream = _readCharacteristic?.value.asBroadcastStream();
+    final controller = StreamGroup<List<int>>.broadcast();
+    final List<Stream> streams = [];
 
-    return _readCharacteristic?.read();
+    List<int> result = [];
+
+    for (final readCharacteristic in readCharacteristics) {
+      controller.add(readCharacteristic.value);
+      final r = await readCharacteristic.read();
+      if (r.isEmpty) {
+        print('Did not return data ${readCharacteristic.uuid}');
+      }
+
+      print('${readCharacteristic.uuid} produced =>' + ascii.decode(r));
+      result += r;
+    }
+
+    _stream = controller.stream;
+    _stream?.listen((event) {
+      // print(ascii.decode(event));
+    });
+
+    return result;
   }
 
   @override
